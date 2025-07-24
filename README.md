@@ -1,92 +1,242 @@
----
+# CZI Parser - 高性能 Zeiss CZI 文件解析器
 
-# CZIMetaData
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)
+![Performance](https://img.shields.io/badge/performance-6x%20faster-green.svg)
 
-## 项目概述
+## 📖 项目概述
 
-该项目用于解析 Zeiss Axio Scan7 产生的 CZI 文件，主要功能包括：
-1. **提取 XML 元数据**：从 CZI 文件中提取完整 XML 元数据，并保存为 `metadata.xml`。
-2. **通道信息解析**：从 XML 元数据中解析各通道信息，包括通道名称、是否激活以及是否采集等。
-3. **融合图数据读取**：利用 [AICSImageIO](https://github.com/AllenCellModeling/aicsimageio) 库获取融合图数据，并保证返回的数据形状包含彩色信息（RGB）。
-4. **图像处理与保存**：对每个通道进行简单的 min–max 归一化（转换至 8 位），并利用 [tifffile](https://pypi.org/project/tifffile/) 将图像保存为 BigTIFF/OME‑TIFF 格式文件，输出文件名中包含通道名称。
+一个专为 Zeiss Axio Scan7 显微镜产生的 CZI 文件设计的高性能解析器。该工具能够快速提取和处理超大尺寸的显微镜图像数据，支持多通道图像的并行处理。
 
-> **注意**：对于一些 Zen lite 类型的 CZI 文件，可能只有部分通道采集有效数据，其他通道可能全为 0。此时不保存全 0 图像。
+### ✨ 主要功能
 
-## 项目依赖
+- **🔍 XML 元数据提取**：完整提取 CZI 文件的 XML 元数据并保存
+- **📊 通道信息解析**：自动识别和分析各通道属性（名称、激活状态等）
+- **🖼️ 融合图数据读取**：智能处理 RGB 和灰度图像数据
+- **⚡ 并行图像处理**：多线程并行处理，大幅提升处理速度
+- **💾 BigTIFF 支持**：自动处理超大图像文件（>2GB）
+- **🎨 智能归一化**：min-max 归一化至 8-bit，保持图像质量
 
-本项目依赖于以下 Python 库：
-- [AICSImageIO](https://github.com/AllenCellModeling/aicsimageio)（用于读取 CZI 文件）  
-- [czifile](https://github.com/AllenCellModeling/czifile)（备用的 CZI 文件读取库）  
-- [tifffile](https://pypi.org/project/tifffile/)（用于保存超大 TIFF 图像）  
-- [numpy](https://numpy.org/)  
-- [xml.etree.ElementTree](https://docs.python.org/3/library/xml.etree.elementtree.html)（Python 标准库，用于 XML 解析）  
-- [argparse](https://docs.python.org/3/library/argparse.html)（Python 标准库，用于命令行参数解析）  
-- [logging](https://docs.python.org/3/library/logging.html)（Python 标准库，用于日志输出）
+### 🚀 性能优势
 
-安装所需库的命令示例如下：
+| 指标 | 原版本 | 优化版本 | 提升倍数 |
+|------|--------|----------|----------|
+| 总处理时间 | 899.25秒 (15分钟) | 67.60秒 (1.1分钟) | **13.3x** |
+| 数据加载 | 281.55秒 | 27.94秒 | **10.1x** |
+| 图像保存 | 617.70秒 | 30.03秒 | **20.6x** |
+
+> 测试环境：49008×46496 像素，8通道，~51GB 原始数据
+
+## 🛠️ 安装要求
+
+### 系统要求
+- Python 3.7+
+- 充足的内存空间（推荐 16GB+）
+- 高速存储设备（推荐 SSD）
+
+### 依赖库安装
 
 ```bash
+# 核心依赖
 pip install aicsimageio czifile tifffile numpy
+
+# 性能优化依赖（可选）
+pip install numba psutil
+
+# 或者一次性安装
+pip install aicsimageio czifile tifffile numpy numba psutil
 ```
 
-## 使用方法
+### 依赖说明
 
-### 命令行运行
+| 库名 | 用途 | 必需性 |
+|------|------|--------|
+| `aicsimageio` | CZI 文件读取和元数据提取 | 必需 |
+| `czifile` | 备用 CZI 读取方案 | 必需 |
+| `tifffile` | BigTIFF/OME-TIFF 图像保存 | 必需 |
+| `numpy` | 数值计算和数组处理 | 必需 |
+| `numba` | JIT 编译加速（可选） | 可选 |
+| `psutil` | 系统资源监控（可选） | 可选 |
 
-将代码保存为 `parse_czi_zenlite.py`，然后使用以下命令运行：
+## 📖 使用指南
+
+### 基本用法
 
 ```bash
-python parse_czi_zenlite.py <czi_file> <output_dir>
+python parse_czi_zenlite_ultrafast.py <czi_file> <output_dir>
 ```
 
-其中：
-- `<czi_file>` 为输入的 CZI 文件路径。
-- `<output_dir>` 为输出目录路径，处理后会在该目录下生成：
-  - `metadata.xml`：保存的 CZI 文件 XML 元数据；
-  - 各通道图像文件，文件名格式为 `<通道名称>.ome.tif`。
-
-### 示例
+### 高级选项
 
 ```bash
-python parse_czi_zenlite.py /path/to/your/file.czi /path/to/output/
+# 指定工作线程数（推荐 4-8 个）
+python parse_czi_zenlite_ultrafast.py input.czi output/ --max-workers 8
+
+# 完整示例
+python parse_czi_zenlite_ultrafast.py \
+    /path/to/sample.czi \
+    /path/to/output/ \
+    --max-workers 8
 ```
 
-## 代码说明
+### 参数说明
 
-### 1. 元数据提取与通道解析
+| 参数 | 类型 | 说明 | 默认值 |
+|------|------|------|--------|
+| `czi_file` | 必需 | 输入的 CZI 文件路径 | - |
+| `output_dir` | 必需 | 输出目录路径 | - |
+| `--max-workers` | 可选 | 最大工作线程数 | 8 |
 
-- **save_metadata()**  
-  使用 AICSImageIO 读取 CZI 文件后，尝试获取 `img.metadata.raw` 属性；若不存在，则转换为字符串。最终将 XML 元数据保存为 `metadata.xml`。
+### 输出文件
 
-- **parse_xml_string()**  
-  对获取的 XML 字符串去除无效字符后，使用 Python 标准库 `xml.etree.ElementTree` 解析为 XML Element 对象。
+处理完成后，在输出目录中会生成：
 
-- **parse_channels()**  
-  从解析后的 XML 中读取 `<MultiTrackSetup>/<Track>/<Channels>/<Channel>` 节点，提取各通道的属性（名称、IsActivated、IsSelected）。
+```
+output_dir/
+├── metadata.xml          # CZI 文件的完整 XML 元数据
+├── channel_0.ome.tif     # 第一个通道图像
+├── channel_1.ome.tif     # 第二个通道图像
+└── ...                   # 其他通道图像
+```
 
-### 2. 融合图数据读取
+## 🏗️ 核心架构
 
-- 项目使用 AICSImageIO 的 `get_image_data("SCYX", squeeze=False, S=0, T=0)` 方法读取融合图数据，并要求返回数据形状为 `(1, C, Y, X, 3)`，其中 3 表示彩色（RGB）样本维度。
-- 如果 AICSImageIO 返回的数据不包含彩色维度，则自动尝试使用 czifile 获取数据。
+### 处理流程
 
-### 3. 图像处理与保存
+```mermaid
+graph TD
+    A[CZI 文件] --> B[元数据提取]
+    B --> C[通道信息解析]
+    C --> D[数据加载优化]
+    D --> E[并行通道处理]
+    E --> F[BigTIFF 保存]
+    F --> G[完成]
+```
 
-- **min_max_scale_to_8bit()**  
-  对图像进行简单的 min–max 归一化，将像素值拉伸到 0～255，并转换为 uint8 类型。
+### 关键技术
 
-- 对于每个通道，先检测整个图像数据是否全为 0（全为 0 则跳过保存），否则进行归一化后调用 tifffile 保存为 BigTIFF/OME‑TIFF 格式，保存时指定 `photometric="rgb"`，保证保存的图像为彩色。
+1. **智能数据加载**
+   - 优先使用 `czifile` 进行快速读取
+   - `AICSImageIO` 作为备选方案
+   - 自动处理各种维度格式
 
+2. **并行处理架构**
+   - 线程池并行处理多个通道
+   - 智能负载均衡
+   - 内存使用优化
 
-## 注意事项
+3. **大文件处理**
+   - 自动检测文件大小
+   - 超过 2GB 自动使用 BigTIFF
+   - 分块存储提高效率
 
-- **XML 解析问题**  
-  如果 XML 元数据中存在不合法的字符，可能会导致解析错误。此时可参考 XML 清洗方案或直接使用 `img.metadata` 的原始内容。
+## 🔧 高级配置
 
-- **数据形状**  
-  代码期望的融合图形状为 (1, C, Y, X, 3)，如果你采集的数据不同（例如单通道或灰度数据），请相应调整代码。
+### 性能调优
 
-- **环境要求**  
-  该代码在 Python 3.x 下测试。请确保 AICSImageIO、czifile、tifffile、numpy 等库版本符合要求。
+```python
+# 在代码中可调整的参数
+MAX_WORKERS = 8           # 最大工作线程数
+MEMORY_THRESHOLD = 0.8    # 内存使用阈值
+CHUNK_SIZE = 1024 * 1024  # 处理块大小
+```
+
+### 错误处理
+
+程序包含完善的错误处理机制：
+
+- **格式错误**：自动重试 BigTIFF 格式
+- **内存不足**：自动垃圾回收
+- **IO 错误**：详细错误日志输出
+
+## 📊 性能监控
+
+### 实时日志
+
+程序运行时会输出详细的处理信息：
+
+```
+2025-07-24 11:15:39 [INFO] 系统: CPU=48核, 工作线程=8
+2025-07-24 11:15:39 [INFO] 数据加载: 27.94秒
+2025-07-24 11:15:39 [INFO] 通道处理: 30.03秒
+2025-07-24 11:15:39 [INFO] 总耗时: 67.60秒
+2025-07-24 11:15:39 [INFO] 成功处理: 8/8 个通道
+```
+
+### 文件大小监控
+
+每个保存的通道都会显示文件大小：
+
+```
+[INFO] 已保存通道 0 (DAPI), 文件大小: 1247.3MB
+[INFO] 已保存通道 1 (FITC), 文件大小: 2156.8MB
+```
+
+## 🐛 故障排除
+
+### 常见问题
+
+**Q: 程序运行缓慢或卡住**
+A: 检查以下因素：
+- 磁盘 I/O 性能（推荐使用 SSD）
+- 可用内存大小
+- 工作线程数设置（推荐 4-8 个）
+
+**Q: 保存失败 "'I' format requires..." 错误**
+A: 这是大文件格式问题，程序会自动重试 BigTIFF 格式
+
+**Q: 部分通道图像全黑**
+A: 检查原始 CZI 文件中该通道是否包含有效数据
+
+**Q: 内存不足错误**
+A: 尝试以下解决方案：
+- 减少工作线程数 (`--max-workers 4`)
+- 确保有足够的可用内存
+- 关闭其他占用内存的程序
+
+### 调试模式
+
+如需详细调试信息，可修改日志级别：
+
+```python
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+### 开发环境设置
+
+```bash
+git clone <repository-url>
+cd czi-parser
+pip install -r requirements.txt
+```
+
+### 测试
+
+```bash
+python -m pytest tests/
+```
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+
+## 📧 联系方式
+
+如有问题或建议，请联系：
+- 邮箱: [your-email@example.com]
+- GitHub Issues: [项目链接]/issues
+
+## 🙏 致谢
+
+感谢以下开源项目的支持：
+- [AICSImageIO](https://github.com/AllenCellModeling/aicsimageio)
+- [czifile](https://github.com/czi-file/czifile)
+- [tifffile](https://github.com/cgohlke/tifffile)
 
 ---
 
+⭐ 如果这个项目对您有帮助，请给我们一个 Star！
