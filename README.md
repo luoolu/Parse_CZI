@@ -227,7 +227,7 @@ python -m pytest tests/
 ## 📧 联系方式
 
 如有问题或建议，请联系：
-- 邮箱: [your-email@example.com]
+- 邮箱: [argluolu@gmail.com]
 - GitHub Issues: [项目链接]/issues
 
 ## 🙏 致谢
