@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,10 +8,8 @@ version = "0.1.0"
 description = "Utilities for parsing Zeiss CZI files"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
-authors = [
-    {name = "luoolu"}
-]
+license = "MIT"                 # ← 用 SPDX 字符串，避免旧表格写法的弃用警告
+authors = [{ name = "LOOLO" }]
 dependencies = [
     "numpy~=1.26.4",
     "tifffile~=2023.2.28",
