@@ -211,7 +211,3 @@ Dataset 49008×46496, 8 channels (~51GB):
 
 ### Requirements
 Python ≥ 3.8; NVMe SSD recommended. Core deps: `aicsimageio`, `czifile`, `tifffile`, `numpy`; optional: `numba`, `psutil`.
-
----
-
-> 如果你希望我把 README 直接 PR 到仓库，或生成同款 **Release 文案**，告诉我分支与目标版本即可。
