@@ -27,6 +27,12 @@
 
 > 测试环境：49008×46496 像素，8通道，~51GB 原始数据
 
+## 📦 安装
+
+```bash
+python -m pip install parse-czi
+```
+
 ## 🛠️ 安装要求
 
 ### 系统要求
@@ -63,17 +69,17 @@ pip install aicsimageio czifile tifffile numpy numba psutil
 ### 基本用法
 
 ```bash
-python parse_czi_zenlite_ultrafast.py <czi_file> <output_dir>
+python parse-czi-zenlite-ultrafast <czi_file> <output_dir>
 ```
 
 ### 高级选项
 
 ```bash
 # 指定工作线程数（推荐 4-8 个）
-python parse_czi_zenlite_ultrafast.py input.czi output/ --max-workers 8
+python parse-czi-zenlite-ultrafast input.czi output/ --max-workers 8
 
 # 完整示例
-python parse_czi_zenlite_ultrafast.py \
+python parse-czi-zenlite-ultrafast \
     /path/to/sample.czi \
     /path/to/output/ \
     --max-workers 8
